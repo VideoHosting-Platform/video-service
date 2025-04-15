@@ -29,6 +29,12 @@ app.add_middleware(
     allow_headers=["*"],  # Разрешить все заголовки
 )
 
+client = Minio(
+    "localhost:9000",
+    access_key=MINIO_USER,
+    secret_key=MINIO_PASSWORD,
+    secure=False
+    )
 
 class Url_request(BaseModel):
     fileName: str
@@ -40,16 +46,28 @@ async def read_root():
 
 @app.post("/generate-presigned-url")
 async def generate_presigned_url(url: Url_request):
-    client = Minio(
-    "localhost:9000",
-    access_key=MINIO_USER,
-    secret_key=MINIO_PASSWORD,
-    secure=False
-    )
-
     url = client.presigned_put_object(
         "videos",
         url.fileName,
         expires=timedelta(hours=1)
     )
     return {"presigned_url":url}
+
+@app.post("/webhook")
+async def handle_webhook(request: Request):
+    data = await request.json()
+    print(f"Event received: {data}")
+
+    url = client.presigned_get_object(
+    "videos",  # Имя бакета
+    data["Key"].split("/")[1],  # Имя файла
+    expires=timedelta(hours=1)
+    )
+    print("заггрузка", url)
+    return {"status": "ok"}
+
+# Порядок команд для настройки нотификации в minio
+# 1) Зарегистрировать вебхук в миинио:  mc admin config set local notify_webhook:service endpoint="http://172.17.0.1:8000/webhook"
+# 2) Перезапустить сервер: mc admin service restart local
+# 3) Сделать вебхук пунктом назначения при создании объектов в бакете videos(put почему-то): mc event add local/videos arn:minio:sqs::service:webhook --event put
+# 4)
