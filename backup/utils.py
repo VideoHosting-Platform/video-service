@@ -4,11 +4,11 @@ import ffmpeg
 import requests
 
 client = Minio(
-    "localhost:9000",
+    "192.168.49.2:30090",
     access_key="minioadmin",
     secret_key="minioadmin",
     secure=False,
-    region="us-east-1",
+    # region="us-east-1",
 )
 
 RESOLUTION_SETS = {
@@ -30,16 +30,17 @@ RESOLUTION_SETS = {
 }
 
 def get_resolution_with_min_download(s3_path):
+    return 144
+
     data = client.get_object("videos", s3_path, length=1024*1024)
     with open("/tmp/partial.mp4", "wb") as f:
         for chunk in data.stream(32*1024):
             f.write(chunk)
     
     height = ffmpeg.probe("/tmp/partial.mp4", select_streams="v:0", show_entries="stream=height")["streams"][0]["height"]
-    print(height)
     return height
 
-async def process_video(video_uri: str):
+def process_video(video_uri: str):
     # Получаем разрешение (как ранее)
     height = get_resolution_with_min_download(video_uri)
     
@@ -57,28 +58,26 @@ async def process_video(video_uri: str):
     
     # Отправляем ивенты
     if "single" in config:
-        requests.post("http://argo-events/trigger", json={
-            "video_uri": video_uri,
-            "resolutions": config["single"],
-            "node_type": "any"
-        })
+        # requests.post("http://argo-events/trigger", json={
+        #     "video_uri": video_uri,
+        #     "resolutions": config["single"],
+        #     "node_type": "any"
+        # })
+        print(f"video_uri: {video_uri}, resolutions: {config["single"]}")
     else:
-        requests.post("http://argo-events/trigger", json={
-            "video_uri": video_uri,
-            "resolutions": config["high"],
-            "node_type": "high"
-        })
-        requests.post("http://argo-events/trigger", json={
-            "video_uri": video_uri,
-            "resolutions": config["low"],
-            "node_type": "low"
-        })
+        # requests.post("http://argo-events/trigger", json={
+        #     "video_uri": video_uri,
+        #     "resolutions": config["high"],
+        #     "node_type": "high"
+        # })
+        print(f"video_uri: {video_uri}, resolutions: {config["high"]}")
+        # requests.post("http://argo-events/trigger", json={
+        #     "video_uri": video_uri,
+        #     "resolutions": config["low"],
+        #     "node_type": "low"
+        # })
+        print(f"video_uri: {video_uri}, resolutions: {config["low"]}")
     return {"status": "processing_started"}
 
-print(get_resolution_with_min_download('123.mp4'))
-# url = client.presigned_put_object(
-#     "videos",
-#     "123.mp4",
-#     expires=timedelta(hours=1)
-# )
-# print(url)
+# print(get_resolution_with_min_download('BigBuckBunny_640x360.m4v'))
+process_video('BigBuckBunny_640x360.m4v')

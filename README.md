@@ -15,3 +15,6 @@ uvicorn app.main:app --reload
  1) Зарегистрировать вебхук в миинио:  mc admin config set local notify_webhook:service endpoint="http://172.17.0.1:8000/webhook"
  2) Перезапустить сервер: mc admin service restart local
  3) Сделать вебхук пунктом назначения при создании объектов в бакете videos(put почему-то): mc event add local/videos arn:minio:sqs::service:webhook --event put
+
+minikube service minio-console -n minio
+kubectl -n argo create token fastapi-external-sa --duration=8760h > fastapi-token.txt
