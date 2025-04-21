@@ -56,14 +56,12 @@ async def generate_presigned_url(url: Url_request):
 async def handle_webhook(request: Request):
     data = await request.json()
     print(f"Event received: {data}")
-    return {"status": "ok"}
 
-# запуск воркфлоу
-@app.post("/create-workflow-http")
-async def create_workflow_http(request: WorkflowRequest):
     namespace = "argo"
-    token = open("app/fastapi-token.txt").read()
-    filename = "BigBuckBunny_640x360.m4v"
+    # token = open("app/fastapi-token.txt").read()
+    token = open("/var/run/secrets/kubernetes.io/serviceaccount/token").read()
+    # filename = "BigBuckBunny_640x360.m4v"
+    filename = data["Key"].split("/")[1]
     video_id = str(uuid.uuid4())[:8]
     preset = get_resolution(filename)
     
@@ -91,11 +89,12 @@ async def create_workflow_http(request: WorkflowRequest):
     }
     if preset:
         async with httpx.AsyncClient(
-            # verify="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
-            verify="/home/andrew/.minikube/ca.crt"
+            # verify="/home/andrew/.minikube/ca.crt"
+            verify="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
         ) as client:
             response = await client.post(
-                f"https://192.168.49.2:8443/apis/argoproj.io/v1alpha1/namespaces/{namespace}/workflows",
+                # f"https://192.168.49.2:8443/apis/argoproj.io/v1alpha1/namespaces/{namespace}/workflows",
+                f"https://kubernetes.default.svc/apis/argoproj.io/v1alpha1/namespaces/{namespace}/workflows",
                 headers={
                     "Authorization": f"Bearer {token}",
                     "Content-Type": "application/json"
@@ -109,3 +108,9 @@ async def create_workflow_http(request: WorkflowRequest):
         return response.json()
     else:
         raise HTTPException(status_code=404, detail="Разрешение не определено")
+
+@app.post("/result", status_code=200)
+async def get_result(request: Request):
+    data = await request.json()
+    print(f"Processed video with id: {data}")
+    return {"status": "ok"}
