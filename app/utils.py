@@ -1,37 +1,64 @@
-import pika
+import aio_pika
+import asyncio
+import json
 
 from app.config import settings
+from app.models import Video
+from app.database import async_session_maker  
 
 RABBITMQ_HOST = settings.RABBITMQ_HOST
-RABBITMQ_QUEUE = settings.RABBITMQ_QUEUE  # очередь, из которой читаем
+RABBITMQ_QUEUE = settings.RABBITMQ_QUEUE
 
 
-def process_message(ch, method, properties, body): 
+async def process_message(message: aio_pika.IncomingMessage):
     try:
-        print("Received message:", body.decode()) # string
-        # message = json.loads(body)
-        # print(f"Получено сообщение: {message}")
-        # Запись в БД
-        # ...
-
-        ch.basic_ack(delivery_tag=method.delivery_tag) # подтверждение обработки
+        data = json.loads(message.body.decode())
+        print(f"Received message: {data}")
+        
+        async with async_session_maker() as session:
+            video = Video(
+                title=data["video_title"],
+                video_url=data["video_master_playlist_url"],
+                video_id=data["video_id"]
+            )
+            session.add(video)
+            await session.commit()
+        
+        await message.ack() # подтверждение, что сообщение прочитано
+        print("Message processed successfully")
+        
+    except json.JSONDecodeError:
+        print("Invalid JSON format")
+        await message.nack(requeue=False)
+    except KeyError as e:
+        print(f"Missing required field: {e}")
+        await message.nack(requeue=False)
     except Exception as e:
-        print(f"Message processing error: {e}")
+        print(f"Processing failed: {e}")
+        await message.nack(requeue=True)  # повторная попытка для временных ошибок
 
-def start_consumer():
-    connection = pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST))
-    channel = connection.channel()
-
-    # создание очереди, если её нет
-    channel.queue_declare(queue=RABBITMQ_QUEUE, durable=True)
- 
-    channel.basic_consume(
-        queue=RABBITMQ_QUEUE,
-        on_message_callback=process_message,
-        auto_ack=False,  # отключаем автоматическое подтверждение
+async def start_consumer():
+    connection = await aio_pika.connect_robust(
+        f"amqp://{RABBITMQ_HOST}/"
     )
-
-    print("Waiting for messages...")
-    channel.start_consuming()
-
+    
+    async with connection:
+        # канал связи для работы с очредями
+        channel = await connection.channel()
+        # получать только 1 сообщение за раз
+        # следующее сообщение придёт после подтверждения текущего
+        await channel.set_qos(prefetch_count=1)
+        
+        # cоздаёт очередь, если её не существует
+        queue = await channel.declare_queue(
+            RABBITMQ_QUEUE,
+            durable=True
+        )
+        
+        print("Consumer started. Waiting for messages...")
+        await queue.consume(process_message)
+        
+        # бесконечный цикл ожидания
+        while True:
+            await asyncio.sleep(1)
 
