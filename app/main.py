@@ -1,24 +1,29 @@
-from fastapi import FastAPI, HTTPException, status, Request, Depends
+from fastapi import FastAPI, HTTPException, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
 from contextlib import asynccontextmanager
 from functools import wraps
 from sqlalchemy.ext.asyncio import AsyncSession
-import threading
+import asyncio
 
 from app.schemas import VideoCreate, VideoReturn
 from app.models import Video
 from app.database import get_session
-
 from app.utils import start_consumer
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI): # фоновый поток с consumer при старте
-    thread = threading.Thread(target=start_consumer, daemon=True) 
-    thread.start()
+async def lifespan(app: FastAPI): # создание асинхронной таски при старте
+    consumer_task = asyncio.create_task(start_consumer())
     yield
-    print("Exiting app...") # при остановке приложения
+    consumer_task.cancel() # при завершении приложения
+    try:
+        await consumer_task
+    except asyncio.CancelledError:
+        pass
+    print("Exiting app...")
+
+app = FastAPI(lifespan=lifespan)
 
 
 app = FastAPI(lifespan=lifespan)

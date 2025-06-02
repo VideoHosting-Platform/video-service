@@ -5,11 +5,11 @@ from app.config import DATABASE_URL
 
 engine = create_async_engine(DATABASE_URL)
 
-new_async_session = async_sessionmaker(engine, expire_on_commit=False)
+async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
 
 
 async def get_session():
-    async with new_async_session() as session:
+    async with async_session_maker() as session:
         yield session
 
 
