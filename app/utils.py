@@ -1,46 +1,37 @@
-from minio import Minio
-import ffmpeg
+import pika
 
-from dotenv import load_dotenv
-import os
+from app.config import settings
 
-
-# загрузка переменных окружения
-load_dotenv("./.env.dev")  
-MINIO_USER = os.environ.get("MINIO_USER")
-MINIO_PASSWORD = os.environ.get("MINIO_PASSWORD")
-MINIO_PORT = os.environ.get("MINIO_PORT")
+RABBITMQ_HOST = settings.RABBITMQ_HOST
+RABBITMQ_QUEUE = settings.RABBITMQ_QUEUE  # очередь, из которой читаем
 
 
-client = Minio(
-    MINIO_PORT,
-    access_key=MINIO_USER,
-    secret_key=MINIO_PASSWORD,
-    secure=False
-)
+def process_message(ch, method, properties, body): 
+    try:
+        print("Received message:", body.decode()) # string
+        # message = json.loads(body)
+        # print(f"Получено сообщение: {message}")
+        # Запись в БД
+        # ...
 
-def get_resolution(filename: str):
-    data = client.get_object("videos", filename, length=1024*1024)
-    with open("/tmp/partial.mp4", "wb") as f:
-        for chunk in data.stream(32*1024):
-            f.write(chunk)
-    
-    height = ffmpeg.probe("/tmp/partial.mp4", select_streams="v:0", show_entries="stream=height")["streams"][0]["height"]
+        ch.basic_ack(delivery_tag=method.delivery_tag) # подтверждение обработки
+    except Exception as e:
+        print(f"Message processing error: {e}")
 
-    if height >= 4320:
-        return "4k"
-    elif height >= 2160:
-        return "2k"
-    elif height >= 1080:
-        return "1080p"
-    elif height >= 720:
-        return "720p"
-    elif height >= 480:
-        return "480p"
-    elif height >= 360:
-        return "360p"
-    elif height >= 240:
-        return "240p"
-    elif height >= 144:
-        return "144p"
-    return None
+def start_consumer():
+    connection = pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST))
+    channel = connection.channel()
+
+    # создание очереди, если её нет
+    channel.queue_declare(queue=RABBITMQ_QUEUE, durable=True)
+ 
+    channel.basic_consume(
+        queue=RABBITMQ_QUEUE,
+        on_message_callback=process_message,
+        auto_ack=False,  # отключаем автоматическое подтверждение
+    )
+
+    print("Waiting for messages...")
+    channel.start_consuming()
+
+

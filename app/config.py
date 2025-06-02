@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     DB_PASS: str
     DB_HOST: str
     DB_PORT: int
+    RABBITMQ_HOST: str
+    RABBITMQ_QUEUE: str
 
 load_dotenv(os.getenv("ENV", ".env"), override=True)
 settings = Settings()
