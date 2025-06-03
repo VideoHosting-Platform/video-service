@@ -4,11 +4,13 @@ from pydantic import BaseModel, Field
 class VideoCreate(BaseModel):
     title: str
     video_url: str
+    video_id: str
     # author_fk: int = Field(alias="author_id")
 
 class VideoReturn(BaseModel):
     title: str
     video_url: str
+    video_id: str
     views: int
     likes: int
     dislikes:int

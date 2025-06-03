@@ -1,9 +1,11 @@
-from fastapi import FastAPI, HTTPException, status, Depends
+from fastapi import FastAPI, HTTPException, status, Depends, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from contextlib import asynccontextmanager
 from functools import wraps
+from sqlalchemy import delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 import asyncio
 
 from app.schemas import VideoCreate, VideoReturn
@@ -22,9 +24,6 @@ async def lifespan(app: FastAPI): # создание асинхронной та
     except asyncio.CancelledError:
         pass
     print("Exiting app...")
-
-app = FastAPI(lifespan=lifespan)
-
 
 app = FastAPI(lifespan=lifespan)
 
@@ -47,9 +46,16 @@ def check_result(func): # декоратор возвращает ошибку 4
     return wrapper
 
 @app.post("/video", response_model=VideoReturn, status_code=status.HTTP_201_CREATED)
-@check_result
-async def add_product(data: VideoCreate, session: AsyncSession = Depends(get_session)): 
-    video = Video(title=data.title, video_url=data.video_url)
+async def add_video(data: VideoCreate, session: AsyncSession = Depends(get_session)): 
+    # проверка, что видео с таким video_id еще нет
+    result = await session.execute(select(Video).where(Video.video_id==data.video_id))
+    if result.scalar_one_or_none() is not None:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Incorrect input data"
+        )
+
+    video = Video(title=data.title, video_url=data.video_url, video_id=data.video_id)
     session.add(video)
     await session.commit()
     await session.refresh(video) # обновляем объект (чтобы получить сгенерированный ID)
@@ -58,8 +64,95 @@ async def add_product(data: VideoCreate, session: AsyncSession = Depends(get_ses
         id=video.id,
         title=video.title,
         video_url=video.video_url,
+        video_id=video.video_id,
         views=video.views,
         likes=video.likes,
         dislikes=video.dislikes
     )
 
+@app.get("/video/{video_id}", response_model=VideoReturn, status_code=status.HTTP_200_OK)
+async def get_video(video_id: str, session: AsyncSession = Depends(get_session)): 
+    result = await session.execute(select(Video).where(Video.video_id==video_id))
+    video = result.scalar_one_or_none()
+    if not video:
+        raise HTTPException(404, "No video with this id")
+
+    return VideoReturn(
+        id=video.id,
+        title=video.title,
+        video_url=video.video_url,
+        video_id=video.video_id,
+        views=video.views,
+        likes=video.likes,
+        dislikes=video.dislikes
+    )
+
+@app.delete("/video/{video_id}", status_code=status.HTTP_200_OK)
+async def delete_video(video_id: str, session: AsyncSession = Depends(get_session)): 
+    try:
+        result = await session.execute(select(Video).where(Video.video_id == video_id))
+        video = result.scalar_one_or_none()
+        
+        if not video:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No Video with this id"
+            )
+
+        await session.execute(delete(Video).where(Video.video_id == video_id).returning(Video.video_id))
+        await session.commit()
+        
+        return {"status": "ok"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error deleting video: {str(e)}"
+        )
+
+@app.put("/video/{video_id}", response_model=VideoReturn, status_code=status.HTTP_200_OK)
+async def update_video(video_id: str, update_data: VideoCreate, session: AsyncSession = Depends(get_session)):
+    try:
+        result = await session.execute(select(Video).where(Video.video_id == video_id))
+        video = result.scalar_one_or_none()
+        
+        if not video:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No video with this id"
+            )
+
+        update_values = {k: v for k, v in update_data.dict().items() if v is not None}
+        
+        if not update_values:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No data provided for update"
+            )
+
+        await session.execute(update(Video).where(Video.video_id == video_id).values(**update_values))
+        await session.commit()
+
+        await session.refresh(video) 
+        
+        return VideoReturn(
+            id=video.id,
+            title=video.title,
+            video_url=video.video_url,
+            video_id=video.video_id,
+            views=video.views,
+            likes=video.likes,
+            dislikes=video.dislikes
+        )
+         
+    except HTTPException:
+        raise
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error updating video: {str(e)}"
+        )

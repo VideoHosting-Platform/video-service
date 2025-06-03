@@ -7,7 +7,7 @@ from app.database import Base
 class Video(Base):
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
     title: Mapped[str] = mapped_column(String(100), nullable=False)
-    video_id: Mapped[str] = mapped_column(nullable=False)
+    video_id: Mapped[str] = mapped_column(nullable=False, unique=True)
     video_url: Mapped[str] = mapped_column(nullable=False)
     views: Mapped[int] = mapped_column(nullable=True, default=0)
     likes: Mapped[int]= mapped_column(nullable=True, default=0)
