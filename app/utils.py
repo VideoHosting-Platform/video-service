@@ -28,7 +28,7 @@ async def process_message(message: aio_pika.IncomingMessage):
         print("Message processed successfully")
         
     except json.JSONDecodeError:
-        print("Invalid JSON format")
+        print("Received message with invalid JSON format")
         await message.nack(requeue=False)
     except KeyError as e:
         print(f"Missing required field: {e}")
