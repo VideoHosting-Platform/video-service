@@ -3,3 +3,5 @@
 /deploy
 .env
 app/__pycache__
+secrets.yaml
+secrets.env

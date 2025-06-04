@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: video-svc-config
+data:
+  DB_HOST: video-db-service
+  DB_PORT: "5432"
+  DB_NAME: videohosting
+  RABBITMQ_QUEUE: db_upload

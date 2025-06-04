@@ -9,10 +9,10 @@ class Settings(BaseSettings):
     DB_HOST: str
     DB_PORT: int
     RABBITMQ_HOST: str
-    RABBITMQ_QUEUE: str
+    RABBITMQ_QUEUE: str 
 
-load_dotenv(os.getenv("ENV", ".env"), override=True)
+# для работы без кубера. Должен быть .env файл
+load_dotenv(".env")
+
 settings = Settings()
 DATABASE_URL = f'postgresql+asyncpg://{settings.DB_USER}:{settings.DB_PASS}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}'
-
-print(os.getenv("ENV"), settings.DB_NAME)
