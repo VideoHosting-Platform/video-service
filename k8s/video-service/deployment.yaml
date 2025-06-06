@@ -14,6 +14,32 @@ spec:
       labels:
         app: video-service       # Лейбл Pod'а (должен совпадать с selector.matchLabels)
     spec:
+      initContainers:
+      - name: wait-for-db
+        image: postgres:13-alpine
+        command: ['sh', '-c', 'until pg_isready -h $DB_HOST -p $DB_PORT; do echo "Waiting for DB..."; sleep 2; done']
+        envFrom:
+        - configMapRef:
+            name: video-svc-config
+        - secretRef:
+            name: video-svc-secrets
+
+      - name: alembic-migrate
+        image: andrewsmooth/video-service:latest  # Используем тот же образ
+        command: ["alembic", "upgrade", "head"]  # Команда для миграций
+        envFrom:
+        - configMapRef:
+            name: video-svc-config  # Те же переменные, что у основного контейнера
+        - secretRef:
+            name: video-svc-secrets 
+        resources:
+          limits:
+            cpu: "0.5" 
+            memory: "256Mi"
+          requests:
+            cpu: "0.2"
+            memory: "128Mi"
+
       containers:
       - name: backend      # Имя контейнера
         image: andrewsmooth/video-service:latest  # Образ из Docker Hub/private registry
@@ -21,7 +47,7 @@ spec:
         - containerPort: 8000  # Порт, который слушает FastAPI (uvicorn)
         envFrom:
         - configMapRef:
-            name: upload-service-config
+            name: video-svc-config
         - secretRef:
             name: video-svc-secrets 
 
