@@ -35,6 +35,8 @@ spec:
             secretKeyRef:
               name: video-svc-secrets
               key: DB_PASS 
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
         volumeMounts:
         - mountPath: /var/lib/postgresql/data
           name: postgres-storage
