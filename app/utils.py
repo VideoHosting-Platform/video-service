@@ -69,7 +69,7 @@ async def start_consumer():
         # cоздаёт очередь, если её не существует
         queue = await channel.declare_queue(
             RABBITMQ_QUEUE,
-            durable=True
+            durable=False
         )
         
         print("Consumer started. Waiting for messages...")
