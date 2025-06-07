@@ -13,17 +13,37 @@ from app.models import Video
 from app.database import get_session
 from app.utils import start_consumer
 
+import logging
+
+
+# @asynccontextmanager
+# async def lifespan(app: FastAPI): # создание асинхронной таски при старте
+#     consumer_task = asyncio.create_task(start_consumer())
+#     yield
+#     consumer_task.cancel() # при завершении приложения
+#     try:
+#         await consumer_task
+#     except asyncio.CancelledError:
+#         pass
+#     print("Exiting app...")
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
 
 @asynccontextmanager
-async def lifespan(app: FastAPI): # создание асинхронной таски при старте
+async def lifespan(app: FastAPI):
+    logger = logging.getLogger(__name__)
+    logger.info("Запуск consumer_task...")
     consumer_task = asyncio.create_task(start_consumer())
     yield
-    consumer_task.cancel() # при завершении приложения
+    logger.info("Остановка consumer_task...")
+    consumer_task.cancel()
     try:
         await consumer_task
     except asyncio.CancelledError:
-        pass
-    print("Exiting app...")
+        logger.info("consumer_task отменён")
 
 app = FastAPI(lifespan=lifespan)
 

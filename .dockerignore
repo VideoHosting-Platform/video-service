@@ -1,7 +1,7 @@
 __pycache__
 .git
 .env
-.envю.example
+.env.example
 .gitignore
 venv
 k8s

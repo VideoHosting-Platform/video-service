@@ -7,3 +7,5 @@ data:
   DB_PORT: "5432"
   DB_NAME: videohosting
   RABBITMQ_QUEUE: db_upload
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_PORT: "5672"

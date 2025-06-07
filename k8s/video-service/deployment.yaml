@@ -50,6 +50,13 @@ spec:
             name: video-svc-config
         - secretRef:
             name: video-svc-secrets 
+        env:
+        - name: RABBITMQ_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: video-svc-config
+              key: RABBITMQ_HOST
+        
 
         resources:            # Ограничения CPU/RAM (опционально)
           limits:

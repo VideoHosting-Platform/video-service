@@ -6,11 +6,17 @@ from app.config import settings
 from app.models import Video
 from app.database import async_session_maker  
 
+import logging
+
+RABBITMQ_USER = settings.RABBITMQ_USER
+RABBITMQ_PASS = settings.RABBITMQ_PASS
 RABBITMQ_HOST = settings.RABBITMQ_HOST
+RABBITMQ_PORT = settings.RABBITMQ_PORT
 RABBITMQ_QUEUE = settings.RABBITMQ_QUEUE
 
 
 async def process_message(message: aio_pika.IncomingMessage):
+    print("process message")
     try:
         data = json.loads(message.body.decode())
         print(f"Received message: {data}")
@@ -37,10 +43,21 @@ async def process_message(message: aio_pika.IncomingMessage):
         print(f"Processing failed: {e}")
         await message.nack(requeue=True)  # повторная попытка для временных ошибок
 
+
+logger = logging.getLogger(__name__)
+
 async def start_consumer():
-    connection = await aio_pika.connect_robust(
-        f"amqp://{RABBITMQ_HOST}/"
-    )
+    try:
+        logger.info("Подключение к RabbitMQ")
+        logger.info("HOST IS ", RABBITMQ_HOST, settings.RABBITMQ_HOST)
+        connection = await aio_pika.connect_robust(
+            f"amqp://{settings.RABBITMQ_USER}:{settings.RABBITMQ_PASS}@{settings.RABBITMQ_HOST}:{settings.RABBITMQ_PORT}/"
+        )
+
+        logger.info("Успешное подключение!")
+    except Exception as e:
+        logger.error(f"Ошибка: {e}", exc_info=True)
+        raise
     
     async with connection:
         # канал связи для работы с очредями
