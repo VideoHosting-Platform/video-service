@@ -1,4 +1,4 @@
-# Video-service
+# Video-service [![Build Status](https://github.com/VideoHosting-Platform/video-service/actions/workflows/main.yml/badge.svg)](https://github.com/VideoHosting-Platform/video-service/actions)
 Микросервис предоставляет api взаимодействия с базой данных загруженных видео. Является частью [видеохостинга](https://github.com/orgs/VideoHosting-Platform/repositories)
 
 Сервис отслеживает очередь RabbitMQ. Когда в неё приходит сообщение о загруженном видео, сервис делает запись в БД. Другие сервисы могут напрямую обращаться, чтобы получить, удалить или изменить записи в БД.
