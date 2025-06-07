@@ -8,12 +8,6 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     environment: prod
-    env:
-      REGISTRY: docker.io
-      IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/video-service
-      FOLDER_ID: b1gq90lppq2qo7ofbuhb
-      CLUSTER_ID: mk8s-cluster
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -22,7 +16,7 @@ jobs:
         uses: VideoHosting-Platform/actions/.github/actions/setup-and-deploy@main
         with:
           registry: 'docker.io'
-          image_name: '${{ secrets.DOCKERHUB_USERNAME }}/upload-service'
+          image_name: '${{ secrets.DOCKERHUB_USERNAME }}/video-service'
           folder_id: 'b1gq90lppq2qo7ofbuhb'
           cluster_id: 'mk8s-cluster'
           dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
