@@ -9,7 +9,7 @@ from app.database import async_session_maker
 import logging
 
 RABBITMQ_USER = settings.RABBITMQ_USER
-RABBITMQ_PASS = settings.RABBITMQ_PASS
+RABBITMQ_PASSWORD = settings.RABBITMQ_PASSWORD
 RABBITMQ_HOST = settings.RABBITMQ_HOST
 RABBITMQ_PORT = settings.RABBITMQ_PORT
 RABBITMQ_QUEUE = settings.RABBITMQ_QUEUE
@@ -51,7 +51,7 @@ async def start_consumer():
         logger.info("Подключение к RabbitMQ")
         logger.info("HOST IS ", RABBITMQ_HOST, settings.RABBITMQ_HOST)
         connection = await aio_pika.connect_robust(
-            f"amqp://{settings.RABBITMQ_USER}:{settings.RABBITMQ_PASS}@{settings.RABBITMQ_HOST}:{settings.RABBITMQ_PORT}/"
+            f"amqp://{settings.RABBITMQ_USER}:{settings.RABBITMQ_PASSWORD}@{settings.RABBITMQ_HOST}:{settings.RABBITMQ_PORT}/"
         )
 
         logger.info("Успешное подключение!")

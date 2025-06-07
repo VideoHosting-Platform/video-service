@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     DB_HOST: str
     DB_PORT: int
     RABBITMQ_USER: str
-    RABBITMQ_PASS: str
+    RABBITMQ_PASSWORD: str
     RABBITMQ_HOST: str
     RABBITMQ_PORT: str
     RABBITMQ_QUEUE: str 
