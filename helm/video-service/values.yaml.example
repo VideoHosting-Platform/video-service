@@ -1,0 +1,25 @@
+replicaCount: 1
+
+appEnv: dev
+httpPort: 8000
+
+db:
+  user: videohosting_user
+  pass: u1s2e3r4
+  host: video-db-service
+  port: 5432
+  name: videohosting
+  replicaCount: 1
+
+rabbitmq:
+  host: video-hosting-rabbitmq
+  port: 5672
+  queueName: db_upload
+  user: rabbitmq_user
+  password: u1s2e3r4
+
+image:
+  repository: andrewsmooth/video-service
+  pullPolicy: IfNotPresent
+  tag: "latest"
+

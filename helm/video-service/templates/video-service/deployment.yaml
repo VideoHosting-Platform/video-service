@@ -1,0 +1,60 @@
+apiVersion: apps/v1         # Версия API для Deployment
+kind: Deployment            # Тип ресурса — Deployment
+metadata:
+  name: {{ .Release.Name}}  # Имя деплоймента
+  labels:
+    app: {{ .Release.Name}}            # Лейбл для связи с Service
+spec:
+  replicas: {{ .Values.replicaCount }}              # Количество копий Pod'ов
+  selector:
+    matchLabels:
+      app: {{ .Release.Name}}         # Выбор Pod'ов по лейблу
+  template:                # Шаблон Pod'а
+    metadata:
+      labels:
+        app: {{ .Release.Name}}      # Лейбл Pod'а (должен совпадать с selector.matchLabels)
+    spec:
+      initContainers:
+      - name: wait-for-db
+        image: postgres:13-alpine
+        command: ['sh', '-c', 'until pg_isready -h $DB_HOST -p $DB_PORT; do echo "Waiting for DB..."; sleep 2; done']
+        envFrom:
+        - configMapRef:
+            name: {{ .Release.Name }}-cm
+        - secretRef:
+            name: {{ .Release.Name}}-secret
+
+      - name: alembic-migrate
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}  # Используем тот же образ
+        command: ["alembic", "upgrade", "head"]  # Команда для миграций
+        envFrom:
+        - configMapRef:
+            name: {{ .Release.Name }}-cm # Те же переменные, что у основного контейнера
+        - secretRef:
+            name: {{ .Release.Name}}-secret 
+        resources:
+          limits:
+            cpu: "0.5" 
+            memory: "256Mi"
+          requests:
+            cpu: "0.2"
+            memory: "128Mi"
+
+      containers:
+      - name: backend      # Имя контейнера
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}  # Образ из Docker Hub/private registry
+        ports:  
+        - containerPort: {{ .Values.httpPort }}  # Порт, который слушает FastAPI (uvicorn)
+        envFrom:
+        - configMapRef:
+            name: {{ .Release.Name }}-cm
+        - secretRef:
+            name: {{ .Release.Name}}-secret
+
+        resources:            # Ограничения CPU/RAM (опционально)
+          limits:
+            cpu: "1"
+            memory: "512Mi"
+          requests:
+            cpu: "0.5"
+            memory: "256Mi"
