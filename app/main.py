@@ -14,6 +14,7 @@ from app.database import get_session
 from app.utils import start_consumer
 
 import logging
+from typing import List
 
 
 # @asynccontextmanager
@@ -106,6 +107,29 @@ async def get_video(video_id: str, session: AsyncSession = Depends(get_session))
         likes=video.likes,
         dislikes=video.dislikes
     )
+
+@app.get("/video", response_model=List[VideoReturn], status_code=status.HTTP_200_OK)
+async def get_all_videos(session: AsyncSession = Depends(get_session)): 
+    # Получаем все видео из базы
+    result = await session.execute(select(Video))
+    videos = result.scalars().all()
+    
+    if not videos:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No videos found")
+    
+    # Преобразуем каждое видео в формат VideoReturn
+    return [
+        VideoReturn(
+            id=video.id,
+            title=video.title,
+            video_url=video.video_url,
+            video_id=video.video_id,
+            views=video.views,
+            likes=video.likes,
+            dislikes=video.dislikes
+        )
+        for video in videos
+    ]
 
 @app.delete("/video/{video_id}", status_code=status.HTTP_200_OK)
 async def delete_video(video_id: str, session: AsyncSession = Depends(get_session)): 
