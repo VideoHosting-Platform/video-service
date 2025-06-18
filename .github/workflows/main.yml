@@ -26,18 +26,9 @@ jobs:
       - name: Deploy to Kubernetes
         run: |
 
-          echo 'RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}' >> .env
-          echo 'RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}' >> .env
-          echo 'DB_USER=${{ secrets.DB_USER }}' >> .env
-          echo 'DB_PASS=${{ secrets.DB_PASS }}' >> .env
-
-
-          kubectl create secret generic video-svc-secrets --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
-          kubectl apply -f k8s/configmap.yaml
-          
-          kubectl apply -f k8s/db/pvc.yaml
-          kubectl apply -f k8s/db/deployment.yaml
-          kubectl apply -f k8s/db/service.yaml
-          
-          kubectl apply -f k8s/video-service/
-          kubectl rollout restart -f k8s/video-service/deployment.yaml
+          - name: Deploy
+        run: |
+          helm upgrade video-hosting \
+            oci://ghcr.io/redblood-pixel/charts/video-hosting-stack \
+            --reuse-values \
+            --set 'videoService.image.tag=${{ github.sha }}'
