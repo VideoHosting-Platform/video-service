@@ -1,17 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name}}-svc
+  name: {{ .Release.Name}}-video-service
   labels:
-    app: {{ .Release.Name}}-svc
+    app: {{ .Release.Name}}-video-service
 spec:
   type: ClusterIP 
   selector:
-    app: {{ .Release.Name}}-svc
+    app: {{ .Release.Name}}-video-service
   ports:
   - name: web
     port: {{ .Values.httpPort }}
     targetPort: {{ .Values.httpPort }}
-  # - name: monitor
-  #   port: 8081
-  #   targetPort: 8081

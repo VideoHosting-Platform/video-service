@@ -1,0 +1,5 @@
+Error from server (NotFound): services "video-service" not found
+error: timed out waiting for the condition
+Error from server (NotFound): services "video-service" not found
+Error from server (NotFound): pods "video-service-svc" not found
+error: timed out waiting for the condition
