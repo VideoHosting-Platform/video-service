@@ -73,6 +73,35 @@ uvicorn app.main:app
 }
 ```
 
+Получение всех видео:
+
+```http
+GET http://localhost:8000/video
+```
+
+Пример ответа:
+```json
+    [
+        {
+            "title": "Пример видео 1",
+            "video_url": "https://storage.example.com/videos/video1.mp4",
+            "video_id": "550e8400-e29b-41d4-a716-446655440000",
+            "views": 1500,
+            "likes": 120,
+            "dislikes": 5
+        },
+        {
+            "title": "Пример видео 2",
+            "video_url": "https://storage.example.com/videos/video2.mp4",
+            "video_id": "550e8400-e29b-41d4-a716-446655440001",
+            "views": 4200,
+            "likes": 350,
+            "dislikes": 12
+        }
+    ]
+```
+
+
 Получение информации о видео по video_id:
 
 ```http
