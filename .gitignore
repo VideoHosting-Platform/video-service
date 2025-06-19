@@ -5,3 +5,4 @@
 app/__pycache__
 secrets.yaml
 secrets.env
+values.yaml
