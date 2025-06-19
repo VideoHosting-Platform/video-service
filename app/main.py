@@ -17,34 +17,29 @@ import logging
 from typing import List
 
 
-# @asynccontextmanager
-# async def lifespan(app: FastAPI): # создание асинхронной таски при старте
-#     consumer_task = asyncio.create_task(start_consumer())
-#     yield
-#     consumer_task.cancel() # при завершении приложения
-#     try:
-#         await consumer_task
-#     except asyncio.CancelledError:
-#         pass
-#     print("Exiting app...")
-
+# Настройка базового логера
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
+# логгер для main.py
+logger = logging.getLogger(__name__)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger = logging.getLogger(__name__)
-    logger.info("Запуск consumer_task...")
+    
+    logger.info("Consumer starting...")
     consumer_task = asyncio.create_task(start_consumer())
     yield
-    logger.info("Остановка consumer_task...")
+    logger.info("Consumer stopping...")
     consumer_task.cancel()
     try:
         await consumer_task
     except asyncio.CancelledError:
-        logger.info("consumer_task отменён")
+        logger.info("Consumer canceled")
+    except Exception as e:
+        logger.error(f"Error while stopping consumer: {e}")
 
 app = FastAPI(lifespan=lifespan)
 
@@ -81,15 +76,7 @@ async def add_video(data: VideoCreate, session: AsyncSession = Depends(get_sessi
     await session.commit()
     await session.refresh(video) # обновляем объект (чтобы получить сгенерированный ID)
 
-    return VideoReturn(
-        id=video.id,
-        title=video.title,
-        video_url=video.video_url,
-        video_id=video.video_id,
-        views=video.views,
-        likes=video.likes,
-        dislikes=video.dislikes
-    )
+    return video.to_return_model()
 
 @app.get("/video/{video_id}", response_model=VideoReturn, status_code=status.HTTP_200_OK)
 async def get_video(video_id: str, session: AsyncSession = Depends(get_session)): 
@@ -98,15 +85,7 @@ async def get_video(video_id: str, session: AsyncSession = Depends(get_session))
     if not video:
         raise HTTPException(404, "No video with this id")
 
-    return VideoReturn(
-        id=video.id,
-        title=video.title,
-        video_url=video.video_url,
-        video_id=video.video_id,
-        views=video.views,
-        likes=video.likes,
-        dislikes=video.dislikes
-    )
+    return video.to_return_model()
 
 @app.get("/video", response_model=List[VideoReturn], status_code=status.HTTP_200_OK)
 async def get_all_videos(session: AsyncSession = Depends(get_session)): 
@@ -118,18 +97,7 @@ async def get_all_videos(session: AsyncSession = Depends(get_session)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No videos found")
     
     # Преобразуем каждое видео в формат VideoReturn
-    return [
-        VideoReturn(
-            id=video.id,
-            title=video.title,
-            video_url=video.video_url,
-            video_id=video.video_id,
-            views=video.views,
-            likes=video.likes,
-            dislikes=video.dislikes
-        )
-        for video in videos
-    ]
+    return [video.to_return_model() for video in videos]
 
 @app.delete("/video/{video_id}", status_code=status.HTTP_200_OK)
 async def delete_video(video_id: str, session: AsyncSession = Depends(get_session)): 
@@ -182,15 +150,7 @@ async def update_video(video_id: str, update_data: VideoCreate, session: AsyncSe
 
         await session.refresh(video) 
         
-        return VideoReturn(
-            id=video.id,
-            title=video.title,
-            video_url=video.video_url,
-            video_id=video.video_id,
-            views=video.views,
-            likes=video.likes,
-            dislikes=video.dislikes
-        )
+        return video.to_return_model()
          
     except HTTPException:
         raise
