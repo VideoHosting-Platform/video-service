@@ -27,7 +27,7 @@ async def process_message(message: aio_pika.IncomingMessage):
             video = Video(
                 title=data["video_title"],
                 video_url=data["video_master_playlist_url"],
-                video_id=data["video_id"]
+                id=data["video_id"]
             )
             session.add(video)
             await session.commit()

@@ -19,7 +19,7 @@ rabbitmq:
   password: u1s2e3r4
 
 image:
-  repository: andrewsmooth/video-service
+  repository: ghcr.io/video-hosting-platform/video-service
   pullPolicy: IfNotPresent
   tag: "latest"
 

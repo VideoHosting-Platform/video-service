@@ -63,15 +63,15 @@ def check_result(func): # декоратор возвращает ошибку 4
 
 @app.post("/video", response_model=VideoReturn, status_code=status.HTTP_201_CREATED)
 async def add_video(data: VideoCreate, session: AsyncSession = Depends(get_session)): 
-    # проверка, что видео с таким video_id еще нет
-    result = await session.execute(select(Video).where(Video.video_id==data.video_id))
+    # проверка, что видео с таким id еще нет
+    result = await session.execute(select(Video).where(Video.id==data.video_id))
     if result.scalar_one_or_none() is not None:
         raise HTTPException(
             status_code=400,
             detail=f"Incorrect input data"
         )
 
-    video = Video(title=data.title, video_url=data.video_url, video_id=data.video_id)
+    video = Video(title=data.title, video_url=data.video_url, id=data.video_id)
     session.add(video)
     await session.commit()
     await session.refresh(video) # обновляем объект (чтобы получить сгенерированный ID)
@@ -80,7 +80,7 @@ async def add_video(data: VideoCreate, session: AsyncSession = Depends(get_sessi
 
 @app.get("/video/{video_id}", response_model=VideoReturn, status_code=status.HTTP_200_OK)
 async def get_video(video_id: str, session: AsyncSession = Depends(get_session)): 
-    result = await session.execute(select(Video).where(Video.video_id==video_id))
+    result = await session.execute(select(Video).where(Video.id==video_id))
     video = result.scalar_one_or_none()
     if not video:
         raise HTTPException(404, "No video with this id")
@@ -102,7 +102,7 @@ async def get_all_videos(session: AsyncSession = Depends(get_session)):
 @app.delete("/video/{video_id}", status_code=status.HTTP_200_OK)
 async def delete_video(video_id: str, session: AsyncSession = Depends(get_session)): 
     try:
-        result = await session.execute(select(Video).where(Video.video_id == video_id))
+        result = await session.execute(select(Video).where(Video.id == video_id))
         video = result.scalar_one_or_none()
         
         if not video:
@@ -111,7 +111,7 @@ async def delete_video(video_id: str, session: AsyncSession = Depends(get_sessio
                 detail=f"No Video with this id"
             )
 
-        await session.execute(delete(Video).where(Video.video_id == video_id).returning(Video.video_id))
+        await session.execute(delete(Video).where(Video.id == video_id).returning(Video.id))
         await session.commit()
         
         return {"status": "ok"}
@@ -128,7 +128,7 @@ async def delete_video(video_id: str, session: AsyncSession = Depends(get_sessio
 @app.put("/video/{video_id}", response_model=VideoReturn, status_code=status.HTTP_200_OK)
 async def update_video(video_id: str, update_data: VideoCreate, session: AsyncSession = Depends(get_session)):
     try:
-        result = await session.execute(select(Video).where(Video.video_id == video_id))
+        result = await session.execute(select(Video).where(Video.id == video_id))
         video = result.scalar_one_or_none()
         
         if not video:
@@ -145,7 +145,7 @@ async def update_video(video_id: str, update_data: VideoCreate, session: AsyncSe
                 detail="No data provided for update"
             )
 
-        await session.execute(update(Video).where(Video.video_id == video_id).values(**update_values))
+        await session.execute(update(Video).where(Video.id == video_id).values(**update_values))
         await session.commit()
 
         await session.refresh(video) 

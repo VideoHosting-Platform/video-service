@@ -6,9 +6,8 @@ from app.schemas import VideoReturn
 
 
 class Video(Base):
-    id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
+    id: Mapped[str] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(100), nullable=False)
-    video_id: Mapped[str] = mapped_column(nullable=False, unique=True)
     video_url: Mapped[str] = mapped_column(nullable=False)
     views: Mapped[int] = mapped_column(nullable=True, default=0)
     likes: Mapped[int]= mapped_column(nullable=True, default=0)
@@ -17,10 +16,9 @@ class Video(Base):
 
     def to_return_model(self):
         return VideoReturn(
-            id=self.id,
+            video_id=self.id,
             title=self.title,
             video_url=self.video_url,
-            video_id=self.video_id,
             views=self.views,
             likes=self.likes,
             dislikes=self.dislikes
