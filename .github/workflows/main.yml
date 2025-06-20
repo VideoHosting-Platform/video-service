@@ -1,8 +1,6 @@
 name: Deploy to Yandex Cloud Kubernetes
 
-on:
-  push:
-    branches: [main, dev]
+on: push
 
 jobs:
   build-and-deploy:
@@ -16,11 +14,9 @@ jobs:
         uses: VideoHosting-Platform/actions/.github/actions/setup-and-deploy@main
         with:
           registry: 'ghcr.io'
-          image_name: '${{ secrets.DOCKERHUB_USERNAME }}/video-service'
           folder_id: '${{ secrets.FOLDER_ID }}'
           cluster_id: '${{ secrets.CLUSTER_ID }}'
-          dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
-          dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
+          token: ${{ secrets.TOKEN }}
           yc_service_account_key: ${{ secrets.YC_SERVICE_ACCOUNT_KEY }}
 
       - name: Deploy to Kubernetes
