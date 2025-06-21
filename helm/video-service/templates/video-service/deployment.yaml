@@ -55,6 +55,8 @@ spec:
       containers:
       - name: backend      # Имя контейнера
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}  # Образ из Docker Hub/private registry
+        command: ["uvicorn"]
+        args: ["app.main:app", "--host", "0.0.0.0", "--port", "8000"]
         ports:  
         - containerPort: {{ .Values.httpPort }}  # Порт, который слушает FastAPI (uvicorn)
         envFrom:
