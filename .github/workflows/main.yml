@@ -1,8 +1,6 @@
 name: Deploy to Yandex Cloud Kubernetes
 
-on:
-  push:
-    branches: [main, dev]
+on: push
 
 jobs:
   build-and-deploy:
@@ -15,29 +13,15 @@ jobs:
       - name: Set up project
         uses: VideoHosting-Platform/actions/.github/actions/setup-and-deploy@main
         with:
-          registry: 'docker.io'
-          image_name: '${{ secrets.DOCKERHUB_USERNAME }}/video-service'
-          folder_id: 'b1gq90lppq2qo7ofbuhb'
-          cluster_id: 'mk8s-cluster'
-          dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
-          dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: 'ghcr.io'
+          folder_id: '${{ secrets.FOLDER_ID }}'
+          cluster_id: '${{ secrets.CLUSTER_ID }}'
+          token: ${{ secrets.TOKEN }}
           yc_service_account_key: ${{ secrets.YC_SERVICE_ACCOUNT_KEY }}
 
       - name: Deploy to Kubernetes
         run: |
-
-          echo 'RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}' >> .env
-          echo 'RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}' >> .env
-          echo 'DB_USER=${{ secrets.DB_USER }}' >> .env
-          echo 'DB_PASS=${{ secrets.DB_PASS }}' >> .env
-
-
-          kubectl create secret generic video-svc-secrets --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
-          kubectl apply -f k8s/configmap.yaml
-          
-          kubectl apply -f k8s/db/pvc.yaml
-          kubectl apply -f k8s/db/deployment.yaml
-          kubectl apply -f k8s/db/service.yaml
-          
-          kubectl apply -f k8s/video-service/
-          kubectl rollout restart -f k8s/video-service/deployment.yaml
+          helm upgrade video-hosting \
+            oci://ghcr.io/video-hosting-platform/charts/video-hosting-stack \
+            --reuse-values \
+            --set 'videoService.image.tag=${{ github.sha }}'

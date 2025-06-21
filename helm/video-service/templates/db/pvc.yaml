@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.db.host }}-pvc
+spec:
+  accessModes:
+  # доступ на чтение и запись для 1 пода одновременно
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi # размер диска

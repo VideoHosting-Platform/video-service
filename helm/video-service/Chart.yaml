@@ -1,0 +1,5 @@
+apiVersion: v2
+name: video-service
+version: 0.1.4      # Версия чарта (SemVer)
+appVersion: 1.0.0   # Версия вашего приложения
+description: Helm chart for Video Service
