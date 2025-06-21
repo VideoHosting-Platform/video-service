@@ -54,7 +54,7 @@ uvicorn app.main:app
 
 ```json
 {
-"video_id":  "i1fedf2f3fw4f", 
+"video_id": "i1fedf2f3fw4f", 
 "video_title": "Синий трактор", 
 "video_master_playlist_url": "http://localhost:9000/videos/1"
 }
